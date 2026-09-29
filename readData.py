@@ -4,6 +4,8 @@ def parseur(file_path: str) -> objets.Modele:
     # 1. Lecture brute et extraction des lignes nettoyées par section
     sections = {}
     current_section = None
+    staff_names = []  # retiendra ['A', 'B', 'C', ...]
+    shift_names = []  # retiendra ['E', 'L']
 
     with open(file_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -35,6 +37,7 @@ def parseur(file_path: str) -> objets.Modele:
         
         shift_str_to_id[shift_name] = idx
         shift_raw_data.append((duration, cannot_follow_str))
+        shift_names.append(shift_name)
 
     # Initialisation de la liste des objets Poste
     nb_postes = len(shift_raw_data)
@@ -64,6 +67,7 @@ def parseur(file_path: str) -> objets.Modele:
         parts = [p.strip() for p in line.split(",")]
         emp_id_str = parts[0]
         staff_str_to_id[emp_id_str] = idx
+        staff_names.append(emp_id_str)
 
         # Parsing de MaxShifts (ex: "E=14|L=14")
         max_shifts_parts = parts[1].split("|") if parts[1] else []
@@ -135,12 +139,13 @@ def parseur(file_path: str) -> objets.Modele:
             postes[p_idx].v_min_j[day] = int(under_w_str)
             postes[p_idx].v_max_j[day] = int(over_w_str)
 
-    return objets.Modele(h=h, J=J, W=W, E=employes, P=postes)
+    modele = objets.Modele(h=h, J=J, W=W, E=employes, P=postes)
+    return modele, staff_names, shift_names
 
 
 # --- Zone de test ---
 if __name__ == "__main__":
-    modele = parseur("Instances//Instance24.txt")
+    modele, staff_names, shift_names = parseur("Instances//Instance24.txt")
     print(f"Horizon : {modele.h} jours")
     print(f"Nombre de postes : {len(modele.P)}")
     print(f"Nombre d'employés : {len(modele.E)}")
