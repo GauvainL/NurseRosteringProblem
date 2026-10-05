@@ -3,13 +3,7 @@ import pychoco
 
 
 def creer_template_choco(probleme: Modele) -> tuple[pychoco.Model, list[list[list]], list[list]]:
-    """
-    Construit le modèle PyChoco correspondant uniquement aux contraintes
-    dures (1) à (9) du problème de nurse rostering.
 
-    Aucune contrainte de couverture et aucun objectif ne sont ajoutés :
-    toute solution trouvée par Choco est donc simplement une solution faisable.
-    """
     modele = pychoco.Model()
 
     h   = probleme.h
