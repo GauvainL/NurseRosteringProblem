@@ -1,6 +1,20 @@
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+import os
 import objets
 
-def parseur(file_path: str) -> objets.Modele:
+        
+def lire_donnees(file_path: str) -> objets.Modele:
+    """
+    Lit les données d'une instances à partir d'un fichier txt pour retourner un objet Modele.
+
+    Args:
+        file_path (str): Chemin vers le fichier d'instance.
+
+    Returns:
+        objets.Modele: Objet Modele contenant les informations de l'instance.
+    """
+    
     # 1. Lecture brute et extraction des lignes nettoyées par section
     sections = {}
     current_section = None
@@ -143,13 +157,70 @@ def parseur(file_path: str) -> objets.Modele:
     return modele, staff_names, shift_names
 
 
-# --- Zone de test ---
-if __name__ == "__main__":
-    modele, staff_names, shift_names = parseur("Instances//Instance1.txt")
-    print(f"Modèle : {modele}")
-    # print(f"Horizon : {modele.h} jours")
-    # print(f"Nombre de postes : {len(modele.P)}")
-    # print(f"Nombre d'employés : {len(modele.E)}")
-    # print(f"Nombre de semaines : {modele.W}")
-    # print(f"Exemple demande Poste 0, Jour 0 : {modele.P[0].u_j[0]} employés requis")
-    # print(f"Exemple souhaits Employé 0 : {modele.E[0].s}")
+def sauvegarder_solution_ros(
+    solution,
+    instance_file_path: str,
+    output_name: str,
+    id_to_staff: list[str],
+    id_to_shift: list[str],
+    h: int
+):
+    """
+    Exporte une Solution au format XML .ros compatible avec Staff Roster Solutions.
+
+    :param solution: Objet Solution contenant x_ejp[p][j][e] (booléen)
+    :param instance_file_path: Nom ou chemin du fichier d'instance (ex: "Instance1.txt")
+    :param output_name: Nom du fichier de sortie (ex: "Solution_Instance1.ros")
+    :param id_to_staff: Liste des ID employés d'origine (ex: ['A', 'B', 'C', ...])
+    :param id_to_shift: Liste des ID postes d'origine (ex: ['E', 'L'] ou ['D'])
+    :param h: Horizon de planification (nombre de jours)
+    """
+
+    roster = ET.Element("Roster", {
+        "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "xsi:noNamespaceSchemaLocation": "Roster.xsd"
+    })
+
+    # Nom du fichier d'instance de référence
+    sched_file = ET.SubElement(roster, "SchedulingPeriodFile")
+    # On garde de préférence uniquement le nom de base du fichier pour la portabilité
+    
+    instance_file_path = os.path.basename(instance_file_path).removesuffix(".txt") + ".ros"
+    sched_file.text = os.path.basename("Instances/" + instance_file_path)
+
+    nb_employes = len(id_to_staff)
+    nb_postes = len(id_to_shift)
+
+    # Pour chaque employé
+    for e in range(nb_employes):
+        emp_id_str = id_to_staff[e]
+        employee_node = ET.SubElement(roster, "Employee", {"ID": emp_id_str})
+
+        # Parcours chronologique des jours
+        for j in range(h):
+            # Recherche du poste affecté à l'employé e le jour j
+            shift_affecte = None
+            for p in range(nb_postes):
+                # Dans Solution : x_ejp[p][j][e] vaut True si e est affecté au poste p le jour j
+                if solution.x_ejp[p][j][e]:
+                    shift_affecte = id_to_shift[p]
+                    break  # Au plus un poste par jour
+            
+            # Si l'employé travaille ce jour-ci, on ajoute l'affectation
+            if shift_affecte is not None:
+                assign = ET.SubElement(employee_node, "Assign")
+                day_elem = ET.SubElement(assign, "Day")
+                day_elem.text = str(j)  # 0-indexed conforme au visualiseur
+                shift_elem = ET.SubElement(assign, "Shift")
+                shift_elem.text = str(shift_affecte)
+
+    # Formatage XML indenté (Pretty Print)
+    xml_str = ET.tostring(roster, encoding="utf-8")
+    reparsed = minidom.parseString(xml_str)
+    pretty_xml = reparsed.toprettyxml(indent="  ")
+
+    with open(output_name, "w", encoding="utf-8") as f:
+        f.write(pretty_xml)
+
+    print(f"Solution sauvegardée avec succès dans : {output_name}")
+      
