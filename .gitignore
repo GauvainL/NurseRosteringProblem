@@ -222,3 +222,7 @@ __marimo__/
 # IDE directories
 .vscode/
 .idea/
+
+
+#Solution folder
+*.ros

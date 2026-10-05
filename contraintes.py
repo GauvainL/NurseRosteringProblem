@@ -188,6 +188,7 @@ def contrainte_10(sol: Solution, modele: Modele) -> bool:
                 return True
             else:
                 return False
+    return True
 
 def calculer_q_ejp(sol: Solution, e:Employe, p:Poste, j:int) -> int:
     """
@@ -239,25 +240,14 @@ def fonction_objective(sol: Solution, modele: Modele):
     
     resultat_1 = 0
     resultat_2 = 0
-    resultat_3 = 0
-    resultat_4 = 0
     
     for p in range(len(sol.x_ejp)):
         for j in range(len(sol.x_ejp[p])):
             for e in range(len(sol.x_ejp[p][j])):
-                resultat_1 += calculer_q_ejp(sol, modele.E[e], modele.P[p], j) * (1- sol.x_ejp[p][j][e])
-    
-    for p in range(len(sol.x_ejp)):
-        for j in range(len(sol.x_ejp[p])):
-            for e in range(len(sol.x_ejp[p][j])):
-                resultat_2 += calculer_p_ejp(sol, modele.E[e], modele.P[p], j) * sol.x_ejp[p][j][e]
+                resultat_1 += (calculer_q_ejp(sol, modele.E[e], modele.P[p], j) * (1- sol.x_ejp[p][j][e])) + (calculer_p_ejp(sol, modele.E[e], modele.P[p], j) * sol.x_ejp[p][j][e])
                 
     for p in range(len(sol.x_ejp)):
         for j in range(len(sol.x_ejp[p])):
-            resultat_3 += modele.P[p].v_min_j * sol.y_jp_m[p][j]
+            resultat_2 += (modele.P[p].v_min_j * sol.y_jp_m[p][j]) + (modele.P[p].v_max_j * sol.y_jp_e[p][j]) 
 
-    for p in range(len(sol.x_ejp)):
-        for j in range(len(sol.x_ejp[p])):
-            resultat_4 += modele.P[p].v_max_j * sol.y_jp_e[p][j] 
-
-    return resultat_1 + resultat_2 + resultat_3 + resultat_4
+    return resultat_1 + resultat_2

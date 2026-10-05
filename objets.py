@@ -37,6 +37,12 @@ class Modele:
 
 
 class Solution:
+    def __init__(self, x_ejp: list[list[list[bool]]], t_ew: list[list[bool]], y_jp_m: list[list[int]], y_jp_e: list[list[int]]):
+        self.x_ejp = x_ejp
+        self.t_ew = t_ew
+        self.y_jp_m = y_jp_m
+        self.y_jp_e = y_jp_e
+
     x_ejp : list[list[list[bool]]] # x[p][j][e]: 1 si au poste p le jour j l'employé e est affecté, 0 sinon
     t_ew  : list[list[bool]]       # t[w][e]   : 1 si le weekend w l'employé e travaille, 0 sinon (w = sam OU dim)
     y_jp_m: list[list[int]]        # y_m[p][j] : manque de personnel au poste p le jour j
