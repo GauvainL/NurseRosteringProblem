@@ -145,10 +145,11 @@ def parseur(file_path: str) -> objets.Modele:
 
 # --- Zone de test ---
 if __name__ == "__main__":
-    modele, staff_names, shift_names = parseur("Instances//Instance24.txt")
-    print(f"Horizon : {modele.h} jours")
-    print(f"Nombre de postes : {len(modele.P)}")
-    print(f"Nombre d'employés : {len(modele.E)}")
-    print(f"Nombre de semaines : {modele.W}")
-    print(f"Exemple demande Poste 0, Jour 0 : {modele.P[0].u_j[0]} employés requis")
-    print(f"Exemple souhaits Employé 0 : {modele.E[0].s}")
+    modele, staff_names, shift_names = parseur("Instances//Instance1.txt")
+    print(f"Modèle : {modele}")
+    # print(f"Horizon : {modele.h} jours")
+    # print(f"Nombre de postes : {len(modele.P)}")
+    # print(f"Nombre d'employés : {len(modele.E)}")
+    # print(f"Nombre de semaines : {modele.W}")
+    # print(f"Exemple demande Poste 0, Jour 0 : {modele.P[0].u_j[0]} employés requis")
+    # print(f"Exemple souhaits Employé 0 : {modele.E[0].s}")

@@ -1,3 +1,5 @@
+import re
+
 from objets import Modele, Solution, Employe, Poste
 
 def contrainte_1(sol: Solution) -> bool:
@@ -12,9 +14,10 @@ def contrainte_1(sol: Solution) -> bool:
         sol (Solution)
     """
     
-    for i in range(len(sol.x_ejp)):
-        for j in range(len(sol.x_ejp[i])):
-            if sum(sol.x_ejp[i][j]) > 1:
+    for e in range(len(sol.x_ejp[0][0])):
+        for j in range(len(sol.x_ejp[0])):
+            somme_postes = sum(sol.x_ejp[p][j][e] for p in range(len(sol.x_ejp)))
+            if somme_postes > 1:
                 return False
     return True
 
@@ -70,11 +73,14 @@ def contrainte_4(sol: Solution, modele: Modele) -> bool:
         sol (Solution):
         modele (Modele):
     """
-    for p in range(len(sol.x_ejp)):
-        for e in range(len(sol.x_ejp[p][0])):
-            total_work = sum(sol.x_ejp[p][j][e] * modele.P[p].d_min for j in range(len(sol.x_ejp[p])))
-            if total_work < modele.E[e].t_min or total_work > modele.E[e].t_max:
-                return False
+    for e in range(len(sol.x_ejp[0][0])):
+        total_work = 0
+        for p in range(len(sol.x_ejp)):
+            duree = modele.P[p].d_min
+            total_work += sum(sol.x_ejp[p][j][e] for j in range(modele.h)) * duree
+
+        if total_work < modele.E[e].t_min or total_work > modele.E[e].t_max:
+            return False
     return True
 
 def contrainte_5_6(sol: Solution, modele: Modele) -> bool:
@@ -89,17 +95,25 @@ def contrainte_5_6(sol: Solution, modele: Modele) -> bool:
         sol (Solution):
         modele (Modele):
     """
-    for e in range(len(sol.x_ejp[0][0])):
-        consecutive_days = 0
-        max_consecutive_days = 0
-        for j in range(len(sol.x_ejp[0])):
-            if any(sol.x_ejp[p][j][e] == 1 for p in range(len(sol.x_ejp))):
-                consecutive_days += 1
-                max_consecutive_days = max(max_consecutive_days, consecutive_days)
+    nb_postes = len(sol.x_ejp)
+    nb_jours = len(sol.x_ejp[0])
+    nb_employes = len(sol.x_ejp[0][0])
+
+    for e in range(nb_employes):
+        c_min = modele.E[e].c_min
+        c_max = modele.E[e].c_max
+        travaille = [any(sol.x_ejp[p][j][e] == 1 for p in range(nb_postes)) for j in range(nb_jours)]
+        j = 0
+        while j < nb_jours:
+            if travaille[j]:
+                debut = j
+                while j < nb_jours and travaille[j]:
+                    j += 1
+                consecutive_days = j - debut
+                if consecutive_days < c_min or consecutive_days > c_max:
+                    return False
             else:
-                consecutive_days = 0
-        if max_consecutive_days < modele.E[e].c_min or max_consecutive_days > modele.E[e].c_max:
-            return False
+                j += 1
     return True
 
 def contrainte_7(sol: Solution, modele: Modele) -> bool:
@@ -115,17 +129,24 @@ def contrainte_7(sol: Solution, modele: Modele) -> bool:
         modele (Modele):
     """
     
-    for e in range(len(sol.x_ejp[0][0])):
-        consecutive_rest_days = 0
-        max_consecutive_rest_days = 0
-        for j in range(len(sol.x_ejp[0])):
-            if not any(sol.x_ejp[p][j][e] == 1 for p in range(len(sol.x_ejp))):
-                consecutive_rest_days += 1
-                max_consecutive_rest_days = max(max_consecutive_rest_days, consecutive_rest_days)
+    nb_postes = len(sol.x_ejp)
+    nb_jours = len(sol.x_ejp[0])
+    nb_employes = len(sol.x_ejp[0][0])
+
+    for e in range(nb_employes):
+        r_min = modele.E[e].r_min
+        repos = [not any(sol.x_ejp[p][j][e] == 1 for p in range(nb_postes)) for j in range(nb_jours)]
+        j = 0
+        while j < nb_jours:
+            if repos[j]:
+                debut = j
+                while j < nb_jours and repos[j]:
+                    j += 1
+                consecutive_days = j - debut
+                if consecutive_days < r_min:
+                    return False
             else:
-                consecutive_rest_days = 0
-        if max_consecutive_rest_days < modele.E[e].r_min:
-            return False
+                j += 1
     return True
 
 def contrainte_8(sol: Solution, modele: Modele) -> bool:
